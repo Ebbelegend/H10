@@ -1,0 +1,72 @@
+import { type List, type Pair, pair, tail, head, is_null, set_head, list} from "./list";
+import { length, list_ref } from "./list_prelude";
+import { lg_from_edges, lg_new, type ListGraph } from "./graphs";
+
+
+type Permutation = Array<number>;
+
+
+function random_permutation(length: number): Permutation {
+    const result = Array(length);
+    for (let i = 0; i < length; i++) {
+        result[i] = i;
+    }
+    for (let i = length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const temp = result[i];
+        result[i] = result[j];
+        result[j] = temp;
+    }
+    return result;
+}
+
+
+function lg_permute_list<T>(xs: Array<T>): Array<T> {
+    const permutation = random_permutation(xs.length);
+    const result = Array(xs.length);
+    for (let i = 0; i < xs.length; i++) {
+        result[permutation[i]] = xs[i];
+    }
+    return result;
+}
+
+
+function lg_permute_nodeLists(lg: ListGraph): ListGraph {
+    const result = lg_new(lg.size);
+    for (let i = 0; i < lg.size; i++) {
+        const permutation = random_permutation(length(lg.adj[i]));
+        const permutedList = Array(length(lg.adj[i]));
+        for (let j = 0; j < length(lg.adj[i]); j++) {
+            permutedList[j] = list_ref(lg.adj[i], permutation[j]);
+        }
+        result.adj[i] = list(permutedList);
+    }
+    return result;
+}
+
+
+test('random_permutation returns a permutation', () => {
+  let permutation = random_permutation(5);
+  expect(permutation).toHaveLength(5);
+  expect(new Set(permutation).size).toBe(5);
+  expect(permutation).toEqual(expect.arrayContaining([0, 1, 2, 3, 4]));
+});
+  
+  
+test('lg_permute_list works correctly', () => {
+  let list = [1, 2, 3, 4, 5];
+  let permuted_list = lg_permute_list(list);
+
+  expect(permuted_list).toHaveLength(5);
+  expect(permuted_list).not.toEqual(list);
+  expect(new Set(permuted_list).size).toBe(5);
+  expect(permuted_list).toEqual(expect.arrayContaining([1, 2, 3, 4, 5]));
+});
+  
+test('lgpermutenodeLists returns permuted ListGraph', () => {
+  const edges = [[0, 1], [1, 2], [2, 3]];
+  const lg = lg_from_edges(4, edges);
+  const permutatedLg = lg_permute_nodeLists(lg);
+  expect(permutatedLg).not.toBe(lg);
+  edges.forEach((e) => expect(permutatedLg.adj[head(e)]).toContain(tail(e)));
+})
